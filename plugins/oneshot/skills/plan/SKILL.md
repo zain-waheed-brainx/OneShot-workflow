@@ -1,21 +1,21 @@
 ---
 name: plan
-description: Plan a piece of work for the Flow workflow by grilling the user one question at a time (grill-me), or validate an existing plan and grill only on its gaps. Writes docs/flow/<name>/plan.md and decisions.md. Usually run by /flow:start; can be used alone. Use for "/flow:plan", "grill me on this", "validate this plan".
+description: Plan a piece of work for the OneShot workflow by grilling the user one question at a time (grill-me), or validate an existing plan and grill only on its gaps. Writes docs/oneshot/<name>/plan.md and decisions.md. Usually run by /oneshot:start; can be used alone. Use for "/oneshot:plan", "grill me on this", "validate this plan".
 argument-hint: "<flow name> [details | path to an existing plan]"
 ---
 
-# Flow: plan
+# OneShot: plan
 
 Read `<this skill's base directory>/../../FORMAT.md` first, for the file formats.
 
-Work in `docs/flow/<name>/`. If no name is given, run `flow:start` instead, which creates the flow.
+Work in `docs/oneshot/<name>/`. If no name is given, run `oneshot:start` instead, which creates the flow.
 
 ## Choose how to plan
 - **Details only:** grill (below), starting from the details.
 - **An existing plan** (file or pasted): ask **Validate it** (Recommended: find the gaps, grill only on those) or **Use it as is**.
   - **Use it as is:** write it into `plan.md` in the plan format, keeping its content, with `status: validated` and `source: imported`.
   - **Validate it:** write it into `plan.md` with `status: drafting` and `source: imported`. List its gaps, risks and contradictions in one short message, then grill only on those.
-- **Tasks only** (from `flow:start`): write a short plan from them (Goal, Scope, Approach as the task list, Done when). Ask one question: **Looks right** or **Change something**.
+- **Tasks only** (from `oneshot:start`): write a short plan from them (Goal, Scope, Approach as the task list, Done when). Ask one question: **Looks right** or **Change something**.
 
 ## Grilling
 Interview the user until you both understand the work the same way. Walk each branch of the design one decision at a time, starting with the decisions others depend on.
@@ -36,4 +36,4 @@ Keep it short. A builder should be able to work from it a month from now with no
 - Done when: checkable items
 
 ## After
-Show a 5-line summary. If `flow:start` invoked this, it carries on. Otherwise offer `/flow:tasks <name>`. Don't ask for approval here: the plan is approved together with its tasks, after the review.
+Show a 5-line summary. If `oneshot:start` invoked this, it carries on. Otherwise offer `/oneshot:tasks <name>`. Don't ask for approval here: the plan is approved together with its tasks, after the review.

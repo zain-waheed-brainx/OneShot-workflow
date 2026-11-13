@@ -1,6 +1,0 @@
-{
-  "name": "flow",
-  "version": "0.1.0",
-  "description": "A light workflow inside your project: grill-me planning, tasks with a test each, a review of plan and tasks together, then a test-first build with ticket and code review. Everything is saved as files in docs/flow/<name>/. No board, no worktrees.",
-  "author": { "name": "Zain Waheed" }
-}

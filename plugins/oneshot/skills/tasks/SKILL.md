@@ -1,14 +1,14 @@
 ---
 name: tasks
-description: Turn a Flow plan into tasks - each one finishable and testable on its own, with its own test command - or import existing tasks into that format. Uses read-only subagents to study the code for bigger work, asks about anything that changes what gets built, and asks the build and run modes. Writes docs/flow/<name>/tasks.md. Usually run by /flow:start; can be used alone. Use for "/flow:tasks", "break this plan into tasks", "import these tasks".
+description: Turn a OneShot plan into tasks - each one finishable and testable on its own, with its own test command - or import existing tasks into that format. Uses read-only subagents to study the code for bigger work, asks about anything that changes what gets built, and asks the build and run modes. Writes docs/oneshot/<name>/tasks.md. Usually run by /oneshot:start; can be used alone. Use for "/oneshot:tasks", "break this plan into tasks", "import these tasks".
 argument-hint: "<flow name> [path to existing tasks]"
 ---
 
-# Flow: tasks
+# OneShot: tasks
 
 Read `<this skill's base directory>/../../FORMAT.md` first. `tasks.md` must follow its format exactly.
 
-This step works out **how** the plan gets built. It needs `docs/flow/<name>/plan.md` with `status: validated`. If the plan is still `drafting`, run `flow:plan <name>` first.
+This step works out **how** the plan gets built. It needs `docs/oneshot/<name>/plan.md` with `status: validated`. If the plan is still `drafting`, run `oneshot:plan <name>` first.
 
 ## 1. Split, or import
 - **From the plan:** break the Approach into tasks, usually 3-10. Each one can be finished and tested on its own.
@@ -46,4 +46,4 @@ This step works out **how** the plan gets built. It needs `docs/flow/<name>/plan
 ## 4. Save
 Write `tasks.md` with `status: draft`, the modes, `test-command`, every task (`status: todo`, `test runs: -`), and "Done when" copied from the plan. Add a `progress.md` line with the number of tasks.
 
-Then, if `flow:start` invoked this, it carries on with the review. Otherwise offer `/flow:review <name> plan`.
+Then, if `oneshot:start` invoked this, it carries on with the review. Otherwise offer `/oneshot:review <name> plan`.

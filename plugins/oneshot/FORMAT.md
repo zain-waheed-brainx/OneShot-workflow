@@ -1,11 +1,11 @@
-# Flow files
+# OneShot files
 
-Every piece of work lives in its own folder inside the project, `docs/flow/<name>/`. `<name>` is a short kebab-case slug of the title, e.g. `export-audit-log`. If that folder already belongs to other work, add `-2`, `-3` and so on.
+Every piece of work lives in its own folder inside the project, `docs/oneshot/<name>/`. `<name>` is a short kebab-case slug of the title, e.g. `export-audit-log`. If that folder already belongs to other work, add `-2`, `-3` and so on.
 
-The files are plain markdown, so they're readable in any editor, in a PR, and a month later. They're meant to be committed with the code; the user does the committing. Flow skills edit these files directly. Keep their structure exactly as below, because every skill (and `/flow:start` when continuing) reads it.
+The files are plain markdown, so they're readable in any editor, in a PR, and a month later. They're meant to be committed with the code; the user does the committing. OneShot skills edit these files directly. Keep their structure exactly as below, because every skill (and `/oneshot:start` when continuing) reads it.
 
 ```
-docs/flow/<name>/
+docs/oneshot/<name>/
   plan.md        what and why: the plan
   decisions.md   grill-me questions and answers
   tasks.md       how: the tasks, each with its own test, plus "Done when"
@@ -94,7 +94,7 @@ Every finding ends as `fixed`, or `accepted`/`skipped` with the user's reason. `
 - 2026-11-13 14:30 · tasks written (6), reviewed, approved
 - 2026-11-13 15:05 · T1 done: permission added, test passes. Next: T2
 ```
-Append one line per step, newest last. The last lines say where things stand and what's next; continuing a flow starts from them.
+Append one line per step, newest last, each starting with the date and time. The last lines say where things stand and what's next; continuing a flow starts from them.
 
 ## Where a flow stands
 Read the front matter of `plan.md` and `tasks.md`, then the end of `progress.md`:

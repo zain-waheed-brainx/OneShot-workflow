@@ -1,15 +1,15 @@
 ---
 name: build
-description: Build an approved Flow piece of work task by task in the current project and branch. Each task is test-first (the test must fail before the code and pass after), then checked against its spec and reviewed for code quality. Independent tasks can run in parallel subagents. Pauses after each task or runs straight through, as chosen. Never commits. Progress is saved in docs/flow/<name>/, so it can stop and continue later. Use for "/flow:build", "build the flow", "do the next task".
+description: Build an approved OneShot piece of work task by task in the current project and branch. Each task is test-first (the test must fail before the code and pass after), then checked against its spec and reviewed for code quality. Independent tasks can run in parallel subagents. Pauses after each task or runs straight through, as chosen. Never commits. Progress is saved in docs/oneshot/<name>/, so it can stop and continue later. Use for "/oneshot:build", "build the flow", "do the next task".
 argument-hint: "<flow name> [all|step]"
 ---
 
-# Flow: build
+# OneShot: build
 
 Read `<this skill's base directory>/../../FORMAT.md` first. Work in the current project folder and branch: no worktrees, no branch changes, and **never `git commit`**.
 
 ## 1. Get ready
-1. **Check it's approved.** `plan.md` and `tasks.md` must be `approved` (or `tasks.md` `building`, when continuing). If not, say what's missing. Approval happens in `/flow:start` after the review.
+1. **Check it's approved.** `plan.md` and `tasks.md` must be `approved` (or `tasks.md` `building`, when continuing). If not, say what's missing. Approval happens in `/oneshot:start` after the review.
 2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md` and the end of `progress.md`. Set `status: building` in `tasks.md`.
 3. **Check the test commands.** Each one runs on this machine as written. Before running a task's test the first time, make sure it only runs the project's test runner on that task's tests. If it does anything else, such as chaining commands, making network calls or deleting files, stop and ask.
 4. **Check git:** run `git status`. Note any changes that existed before this build. They aren't this flow's work, and they never get staged.
@@ -21,8 +21,8 @@ Repeat until every task is `done` or `skipped`.
 2. **Mark it `doing`** in `tasks.md`.
 3. **Test first.** For each task:
    1. **Write the test exactly as the task's `test` describes, and nothing else.** Don't write any of the task's code yet.
-   2. **Run its command. It must fail.**
-      - If it passes, the test doesn't test the new behaviour: fix the test.
+   2. **Run its command. It must fail, and so must every case in it.**
+      - A case that passes before the code doesn't test the new behaviour, e.g. an "it throws" case that passes only because the function doesn't exist yet. Fix it so it fails for the missing behaviour, and run it again.
       - If it fails for the wrong reason (a syntax error, or the runner can't start), fix that first.
 
       Record it in `test runs:`, e.g. `before: failed 14:02`.
@@ -48,7 +48,7 @@ Repeat until every task is `done` or `skipped`.
 ## 3. All tasks done
 1. **Run everything together:** every task's test in order, then the project's `test-command`. Everything must pass. A test that passed alone but fails together usually means two tasks interfere: find out why, and fix it. Never report done with failing tests.
 2. Add a `progress.md` line with the result.
-3. **Next step:** if `flow:start` invoked this, it carries on with the code review. Otherwise offer `/flow:review <name> code`. The code review stages the flow's files and checks them. Nothing gets committed.
+3. **Next step:** if `oneshot:start` invoked this, it carries on with the code review. Otherwise offer `/oneshot:review <name> code`. The code review stages the flow's files and checks them. Nothing gets committed.
 
 ## Rules
 - **Follow the plan.** A decision it doesn't cover goes to the user as one question, and the answer goes in `decisions.md`.

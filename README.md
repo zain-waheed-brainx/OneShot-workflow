@@ -1,9 +1,9 @@
-# Flow
+# OneShot
 
-A lightweight Claude Code workflow that takes a piece of work from idea to reviewed, tested code. It runs **inside your project, on your current branch**: no board, no worktrees, no extra tools. Everything it produces is saved as markdown files in `docs/flow/<name>/`, so you can stop at any point and continue later, even a month on.
+A lightweight Claude Code workflow that takes a piece of work from idea to reviewed, tested code. It runs **inside your project, on your current branch**: no board, no worktrees, no extra tools. Everything it produces is saved as markdown files in `docs/oneshot/<name>/`, so you can stop at any point and continue later, even a month on.
 
 ```
-/flow:start  ─►  plan (grill-me)  ─►  tasks (a test each)  ─►  review plan + tasks  ─►  you approve
+/oneshot:start  ─►  plan (grill-me)  ─►  tasks (a test each)  ─►  review plan + tasks  ─►  you approve
              ─►  build (test first, task by task)  ─►  review code  ─►  staged + commit message  ─►  you commit
 ```
 
@@ -13,17 +13,19 @@ It's a lighter sibling of the Ticketboard plugin. It keeps the same planning, ta
 
 ## Install
 ```bash
-claude plugin marketplace add zain-waheed-brainx/flow-workflow
+claude plugin marketplace add zain-waheed-brainx/oneshot-workflow
 ```
 ```bash
-claude plugin install flow@flow-workflow
+claude plugin install oneshot@oneshot
 ```
 Then start a new Claude session in your project.
 
 To try it from source without installing, for one session:
 ```bash
-claude --plugin-dir "/path/to/flow-workflow/plugins/flow"
+claude --plugin-dir "/path/to/oneshot/plugins/oneshot"
 ```
+
+**Coming from Flow (0.1.0)?** Uninstall `flow@flow-workflow`, install `oneshot@oneshot`, and move any `docs/flow/*` folders to `docs/oneshot/`. `/oneshot:start` offers to move them for you.
 
 No setup is needed. It only requires git (and the project's own test runner, if it has one).
 
@@ -33,19 +35,19 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 
 | Command | What it does |
 |---|---|
-| **`/flow:start`** | **The main entry.** Give it details, an existing plan, or existing tasks, or nothing to continue a flow. It runs every step below in order |
-| `/flow:plan <name>` | Grill-me planning, one question at a time, or validating an existing plan. Writes `plan.md` and `decisions.md` |
-| `/flow:tasks <name>` | Splits the plan into tasks, each with its own test, or imports your tasks. Subagents study the code for bigger work. Writes `tasks.md` |
-| `/flow:review <name> plan\|code` | **plan:** reviews the plan and tasks together before any code, with a fresh-eyes subagent. **code:** after the build, a ticket review, then a code review |
-| `/flow:build <name>` | Builds task by task: test first, ticket review, self code review. Never commits |
+| **`/oneshot:start`** | **The main entry.** Give it details, an existing plan, or existing tasks, or nothing to continue a flow. It runs every step below in order |
+| `/oneshot:plan <name>` | Grill-me planning, one question at a time, or validating an existing plan. Writes `plan.md` and `decisions.md` |
+| `/oneshot:tasks <name>` | Splits the plan into tasks, each with its own test, or imports your tasks. Subagents study the code for bigger work. Writes `tasks.md` |
+| `/oneshot:review <name> plan\|code` | **plan:** reviews the plan and tasks together before any code, with a fresh-eyes subagent. **code:** after the build, a ticket review, then a code review |
+| `/oneshot:build <name>` | Builds task by task: test first, ticket review, self code review. Never commits |
 
 ### Starting
 ```
-/flow:start Add CSV export of the audit log for compliance users
-/flow:start docs/specs/audit-export.md        ← an existing plan: validate it, or use it as is
-/flow:start @tasks.md                         ← existing tasks: imported, then each gets a test
-/flow:start                                   ← pick an existing flow to continue
-/flow:start export-audit-log                  ← continue that flow
+/oneshot:start Add CSV export of the audit log for compliance users
+/oneshot:start docs/specs/audit-export.md        ← an existing plan: validate it, or use it as is
+/oneshot:start @tasks.md                         ← existing tasks: imported, then each gets a test
+/oneshot:start                                   ← pick an existing flow to continue
+/oneshot:start export-audit-log                  ← continue that flow
 ```
 
 ---
@@ -87,14 +89,14 @@ No setup is needed. It only requires git (and the project's own test runner, if 
    - a list of changed files that were left out (for example generated junk);
    - a suggested commit message (from the `commit-message` skill when it's installed).
 
-   **You commit.** Flow never commits, creates branches or switches branches.
+   **You commit.** OneShot never commits, creates branches or switches branches.
 
 ---
 
 ## Files
 
 ```
-docs/flow/<name>/
+docs/oneshot/<name>/
   plan.md        what and why: goal, scope, decisions, approach, risks, done when (status in front matter)
   decisions.md   every grill-me question and answer
   tasks.md       tasks with files, how, test command, status and test runs, plus "Done when"
@@ -102,23 +104,23 @@ docs/flow/<name>/
   progress.md    one line per step; the last lines say what's next
 ```
 
-These are meant to be committed with the code, so reviewers can see why the work was done this way. The full format is in [`plugins/flow/FORMAT.md`](plugins/flow/FORMAT.md).
+These are meant to be committed with the code, so reviewers can see why the work was done this way. The full format is in [`plugins/oneshot/FORMAT.md`](plugins/oneshot/FORMAT.md).
 
-**Continuing:** `/flow:start` with no arguments lists your flows and where each stands, read from these files. Pick one and it carries on from the next step.
+**Continuing:** `/oneshot:start` with no arguments lists your flows and where each stands, read from these files. Pick one and it carries on from the next step.
 
 ---
 
 ## Notes
-- **Commit hooks that stage everything** (for example `git add -A` before reviewing) would also commit the files Flow left out. Gitignore generated files, or remove them before committing. Flow's hand-over lists them.
+- **Commit hooks that stage everything** (for example `git add -A` before reviewing) would also commit the files OneShot left out. Gitignore generated files, or remove them before committing. OneShot's hand-over lists them.
 - **Unrelated changes** that were already in your working tree are never staged.
 - **Projects with no test runner:** the first task sets one up, with a smoke test.
 
 ## Repo layout
 ```
 .claude-plugin/marketplace.json
-plugins/flow/
+plugins/oneshot/
   .claude-plugin/plugin.json
   FORMAT.md                      file formats shared by all skills
   skills/{start,plan,tasks,review,build}/SKILL.md
 ```
-After changing a skill, bump `version` in `plugin.json` and push. Users update with `claude plugin update flow@flow-workflow`.
+After changing a skill, bump `version` in `plugin.json` and push. Users update with `claude plugin update oneshot@oneshot`.

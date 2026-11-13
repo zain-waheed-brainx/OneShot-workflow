@@ -1,16 +1,16 @@
 ---
 name: start
-description: Start or continue a piece of work with the Flow workflow, in the current project and branch (no board, no worktrees). Give it details of what to build, an existing plan, existing tasks, or nothing to pick up an existing flow. It then runs the whole flow - plan with grill-me, tasks with a test each, a review of plan and tasks together, your approval, a test-first build, and a code review - and saves everything as files in docs/flow/<name>/. Use for "/flow:start", "start a flow", "plan and build this", "here's my plan, build it", "continue my flow".
+description: Start or continue a piece of work with the OneShot workflow, in the current project and branch (no board, no worktrees). Give it details of what to build, an existing plan, existing tasks, or nothing to pick up an existing flow. It then runs the whole flow - plan with grill-me, tasks with a test each, a review of plan and tasks together, your approval, a test-first build, and a code review - and saves everything as files in docs/oneshot/<name>/. Use for "/oneshot:start", "start a flow", "plan and build this", "here's my plan, build it", "continue my flow".
 argument-hint: "[details of the work | path to a plan or tasks file | existing flow name]"
 ---
 
-# Flow: start
+# OneShot: start
 
-The main entry point. It works out what you have, creates the flow's folder, and runs each step in order by invoking the other Flow skills (`flow:plan`, `flow:tasks`, `flow:review`, `flow:build`) with the Skill tool, passing the flow's name.
+The main entry point. It works out what you have, creates the flow's folder, and runs each step in order by invoking the other OneShot skills (`oneshot:plan`, `oneshot:tasks`, `oneshot:review`, `oneshot:build`) with the Skill tool, passing the flow's name.
 
 First read `<this skill's base directory>/../../FORMAT.md`. It defines the files, their exact format, and how to tell where a flow stands.
 
-## Ground rules (every Flow step)
+## Ground rules (every OneShot step)
 - **No board, no worktrees, no branches.** Work happens in the current project folder, on the branch that's checked out. Never create, switch or delete branches.
 - **Never commit.** At the end the user gets the changes staged (only this flow's files) and a suggested commit message. They commit.
 - **The files are the memory.** After every step, update the flow's files and add a line to `progress.md`. Another session, or the same one a month later, continues from them alone.
@@ -18,10 +18,11 @@ First read `<this skill's base directory>/../../FORMAT.md`. It defines the files
 
 ## 1. Work out what was given
 Read the arguments:
-- **Nothing:** list the folders in `docs/flow/`. For each, show its title, where it stands (see FORMAT.md) and the last line of `progress.md`.
+- **Old folder:** if `docs/flow/` exists (from before the rename to OneShot), offer to move its folders to `docs/oneshot/` with `git mv` (or `mv` if they're untracked), then continue as normal.
+- **Nothing:** list the folders in `docs/oneshot/`. For each, show its title, where it stands (see FORMAT.md) and the last line of `progress.md`.
   - none: ask what to work on (details, a plan, or tasks);
   - some: ask which to continue, with **Start something new** as the last option.
-- **The name of an existing flow** (a folder in `docs/flow/`): continue it (step 3).
+- **The name of an existing flow** (a folder in `docs/oneshot/`): continue it (step 3).
 - **A file path, or pasted text:** read it and decide what it is.
   - **A plan:** it says what to build and why, with approach, scope or decisions.
   - **Tasks:** a list of concrete steps or tickets to do.
@@ -30,40 +31,40 @@ Read the arguments:
 - **Plain details** (a description of the work): this is a new plan.
 
 ## 2. Create the flow
-1. Pick a title and a `<name>` slug, and show both, e.g. "Saving to `docs/flow/export-audit-log/`". Change them if the user wants.
+1. Pick a title and a `<name>` slug, and show both, e.g. "Saving to `docs/oneshot/export-audit-log/`". Change them if the user wants.
 2. Create the folder, and `progress.md` with its first line saying what was given, e.g. `· started from details`, `· started from plan docs/specs/export.md`, or `· started from tasks (pasted)`.
 3. Check `git status`. If there are uncommitted changes that aren't part of this work, say so once: the build stages only this flow's files, so they stay out of it.
 
 ## 3. Run the flow
 Go from wherever the flow stands, using the state table in FORMAT.md. Invoke each skill with the flow's name, and say in one line which step is starting.
 
-1. **Plan** (`flow:plan <name>`):
+1. **Plan** (`oneshot:plan <name>`):
    - from **details**: grill-me, to make a new plan;
    - from an **existing plan**: it asks whether to validate it (find the gaps, then grill only on those) or use it as is;
    - from **tasks only**: write a short plan from them (goal, scope, done when) and confirm it in one question, rather than a full grilling.
-2. **Tasks** (`flow:tasks <name>`):
+2. **Tasks** (`oneshot:tasks <name>`):
    - from a **plan**: split it into tasks, each with its own test;
    - from **existing tasks**: import them into the tasks format and add a test to each.
    - from **both** (a plan with its own task breakdown): the plan is validated or used as is in step 1, and its breakdown is **imported** here, not regenerated.
-3. **Review the plan and tasks together** (`flow:review <name> plan`). It finds gaps, extra scope, weak tests and ordering problems, then applies the fixes you approve.
+3. **Review the plan and tasks together** (`oneshot:review <name> plan`). It finds gaps, extra scope, weak tests and ordering problems, then applies the fixes you approve.
 4. **Approval.** Show:
    - the task list: id, title, after, parallel, test command. These commands run on this machine as written, so point out any that do more than run the project's test runner, especially ones that came from imported tasks;
    - the build and run modes;
    - any `accepted` review items.
 
-   Ask: **Approve and build** (Recommended), **Change something**, or **Stop here** (the files are saved; continue later with `/flow:start <name>`). On approve, set `status: approved` in `plan.md` and in `tasks.md`, and log it in `progress.md`.
-5. **Build** (`flow:build <name>`): test first, task by task.
-6. **Code review** (`flow:review <name> code`): ticket review of the whole change against the plan, then code review.
+   Ask: **Approve and build** (Recommended), **Change something**, or **Stop here** (the files are saved; continue later with `/oneshot:start <name>`). On approve, set `status: approved` in `plan.md` and in `tasks.md`, and log it in `progress.md`.
+5. **Build** (`oneshot:build <name>`): test first, task by task.
+6. **Code review** (`oneshot:review <name> code`): ticket review of the whole change against the plan, then code review.
 7. **Hand over:**
-   - re-stage `docs/flow/<name>/` by name, so the final review and progress are included, and check `git diff --cached --stat`;
-   - list the staged files (the work, plus `docs/flow/<name>/`);
+   - re-stage `docs/oneshot/<name>/` by name, so the final review and progress are included, and check `git diff --cached --stat`;
+   - list the staged files (the work, plus `docs/oneshot/<name>/`);
    - list any changed files that were left out;
    - give a suggested commit message from the `commit-message` skill if it's available. Otherwise use `<title>` and a short body.
 
    Tell them to commit when ready. If the repo's commit hook stages everything (e.g. `git add -A`), warn them that it would also pick up the files left out.
 
 ## Stopping and continuing
-The user can stop at any point. Before stopping, add a `progress.md` line saying what's done and what's next. `/flow:start <name>` (or `/flow:start` with no arguments, then pick the flow) continues from the files.
+The user can stop at any point. Before stopping, add a `progress.md` line saying what's done and what's next. `/oneshot:start <name>` (or `/oneshot:start` with no arguments, then pick the flow) continues from the files.
 
 ## Summary at the end
 Write 3-5 lines:

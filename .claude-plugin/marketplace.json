@@ -1,8 +1,16 @@
 {
-  "name": "flow-workflow",
-  "owner": { "name": "Zain Waheed" },
-  "metadata": { "description": "Flow: plan, tasks, review and build inside your project, with no board or worktrees" },
+  "name": "oneshot",
+  "owner": {
+    "name": "Zain Waheed"
+  },
+  "metadata": {
+    "description": "OneShot: plan, tasks, review and build inside your project, with no board or worktrees"
+  },
   "plugins": [
-    { "name": "flow", "source": "./plugins/flow", "description": "Plan, tasks, review and test-first build, saved as files in docs/flow/" }
+    {
+      "name": "oneshot",
+      "source": "./plugins/oneshot",
+      "description": "Plan, tasks, review and test-first build, saved as files in docs/oneshot/"
+    }
   ]
 }
