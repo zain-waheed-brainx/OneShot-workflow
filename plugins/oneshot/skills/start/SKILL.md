@@ -15,6 +15,7 @@ First read `<this skill's base directory>/../../FORMAT.md`. It defines the files
 - **Never commit.** At the end the user gets the changes staged (only this flow's files) and a suggested commit message. They commit.
 - **The files are the memory.** After every step, update the flow's files and add a line to `progress.md`. Another session, or the same one a month later, continues from them alone.
 - **Ask with AskUserQuestion, one question at a time**, with 2-4 concrete options and the recommended one first, marked "(Recommended)".
+- **Show progress in the task list** (the session's checklist tool, never printed as text). The steps are: Plan · Tasks · Review plan + tasks · Approve · Build · Code review · Hand over. Steps already done (when continuing) start as done. Move to the next step in the same message as the step's first tool call. While building, `oneshot:build` expands the Build step into one item per task, as its "Progress you can see" section describes, and the list goes back to these steps after the build.
 
 ## 1. Work out what was given
 Read the arguments:

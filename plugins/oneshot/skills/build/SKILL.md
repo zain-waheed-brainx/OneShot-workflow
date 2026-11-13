@@ -13,12 +13,24 @@ Read `<this skill's base directory>/../../FORMAT.md` first. Work in the current 
 2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md` and the end of `progress.md`. Set `status: building` in `tasks.md`.
 3. **Check the test commands.** Each one runs on this machine as written. Before running a task's test the first time, make sure it only runs the project's test runner on that task's tests. If it does anything else, such as chaining commands, making network calls or deleting files, stop and ask.
 4. **Check git:** run `git status`. Note any changes that existed before this build. They aren't this flow's work, and they never get staged.
+5. **Set up the task list** from `tasks.md`, following "Progress you can see" below. Tasks already done show as done or folded, so a continued build starts where it left off.
+
+## Progress you can see
+Show progress in the session's task list: the checklist tool your environment has, such as TodoWrite, or the app's own plan or checklist tool. Never print the checklist as text. Keep it matching `tasks.md` at all times:
+- **One item per task**, titled `T#: <title>`, in build order. Never group tasks into batches.
+- **Many tasks (more than 8):** fold the finished ones into one item, `T1–T6 done`. Show the current task(s) and the next 3 on their own, then one item for the rest, e.g. `T11–T16 and the final test run`. Re-fold as you go.
+- **Exactly one item is in progress: the current task.** For a parallel batch, that one item names them all: `T9: verify domain (+ T12, T13 in parallel)`.
+- **Update at the moment a task starts or finishes,** in the same message as your next tool call, never as a message of its own. If the list ever disagrees with `tasks.md`, fix the list first.
+- **The last item is always** `Run all tests together`.
+- **Progress line:** after each task (or parallel batch) is done, write one line, with a 10-character bar: filled cells = done ÷ total × 10, rounded to the nearest whole cell:
+  `▓▓▓▓░░░░░░ 6/16 · T6 done (26 tests pass) · now T9`
+- Steps inside a task (writing the test, the failing run, the code) are not list items. Updating that often costs tokens and adds little.
 
 ## 2. Loop
 Repeat until every task is `done` or `skipped`.
 
 1. **Next batch.** Take the first task that isn't done and whose `after:` tasks are all done. If `build: parallel`, also take the other ready tasks that are `parallel: yes` and share no files with each other.
-2. **Mark it `doing`** in `tasks.md`.
+2. **Mark it `doing`** in `tasks.md`, and make it the in-progress item in the task list, in the same message as the first step of the work.
 3. **Test first.** For each task:
    1. **Write the test exactly as the task's `test` describes, and nothing else.** Don't write any of the task's code yet.
    2. **Run its command. It must fail, and so must every case in it.**
@@ -39,10 +51,10 @@ Repeat until every task is `done` or `skipped`.
    - **Scope:** does it do nothing outside the plan? A file outside the task's `files` is fine only if it clearly belongs to the task: add it to `files` and say so.
    - **Test:** does the test prove the spec?
 5. **Self code review:** bugs, edge cases, error handling, and leftover debug code. Run lint if the project has it. Fix what you find and re-run the task's test.
-6. **Mark it `done`** in `tasks.md`. Add a `progress.md` line: `T# done: what changed. Next: T#. Gotchas: …`.
+6. **Mark it `done`** in `tasks.md`. Add a `progress.md` line: `T# done: what changed. Next: T#. Gotchas: …`. Tick it in the task list, make the next task in progress, and write the progress line.
 7. **Pause or carry on.** Use `all` or `step` from the arguments if given, otherwise the `run:` mode.
    - **step:** ask **Continue with T#** (Recommended), **Run the rest in one go**, **Stop here**, or **Change something first**.
-   - **all:** carry on, with a one-line update after each task (e.g. `T3 done, 3/6`).
+   - **all:** carry on. The progress line is the update after each task.
    - **Either mode:** stop and ask when a test can't be fixed, when a task needs a decision the plan doesn't cover (log the answer in `decisions.md`), or when a change would go outside the plan.
 
 ## 3. All tasks done
