@@ -10,7 +10,7 @@ Read `<this skill's base directory>/../../FORMAT.md` first. Work in the current 
 
 ## 1. Get ready
 1. **Check it's approved.** `plan.md` and `tasks.md` must be `approved` (or `tasks.md` `building`, when continuing). If not, say what's missing. Approval happens in `/oneshot:start` after the review.
-2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md` and the end of `progress.md`. Set `status: building` in `tasks.md`.
+2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md` and **Now** in `progress.md`. Set `status: building` in `tasks.md`. If the files are in the older format, convert them first (FORMAT.md, "Older files").
 3. **Check the test commands.** Each one runs on this machine as written. Before running a task's test the first time, make sure it only runs the project's test runner on that task's tests. If it does anything else, such as chaining commands, making network calls or deleting files, stop and ask.
 4. **Check git:** run `git status`. Note any changes that existed before this build. They aren't this flow's work, and they never get staged.
 5. **Set up the task list** from `tasks.md`, following "Progress you can see" below. Tasks already done show as done or folded, so a continued build starts where it left off.
@@ -30,7 +30,7 @@ Show progress in the session's task list: the checklist tool your environment ha
 Repeat until every task is `done` or `skipped`.
 
 1. **Next batch.** Take the first task that isn't done and whose `after:` tasks are all done. If `build: parallel`, also take the other ready tasks that are `parallel: yes` and share no files with each other.
-2. **Mark it `doing`** in `tasks.md`, and make it the in-progress item in the task list, in the same message as the first step of the work.
+2. **Mark it `doing` (🔄)** and update the views (FORMAT.md, "Keeping the views current"). In the same message as the first step of the work, make it the in-progress item in the task list.
 3. **Test first.** For each task:
    1. **Write the test exactly as the task's `test` describes, and nothing else.** Don't write any of the task's code yet.
    2. **Run its command. It must fail, and so must every case in it.**
@@ -42,7 +42,7 @@ Repeat until every task is `done` or `skipped`.
    4. **Run it again. It must pass.**
       - Record `after: passed 14:09`.
       - If it fails, fix the code, not the test (unless the test itself was wrong, which you then say).
-      - If you can't make it pass, set the task back to `todo`, write a note in `progress.md`, and stop to ask.
+      - If you can't make it pass, set the task to `blocked` (❌), update the views (FORMAT.md, "Keeping the views current") with a ⚠️ or ❌ log line saying why, and stop to ask.
    - **Manual tests:** describe how to check it, and ask the user to confirm that it works.
 
    **Parallel batch:** launch one subagent per task in a single message, all in this folder. Give each one its task, the plan's decisions, and the steps above. Tell it to change **only its own files**, not to stage or commit anything, and to report its before-run, what it changed, and anything it couldn't do. When they're back, run each task's test yourself, one at a time.
@@ -51,7 +51,7 @@ Repeat until every task is `done` or `skipped`.
    - **Scope:** does it do nothing outside the plan? A file outside the task's `files` is fine only if it clearly belongs to the task: add it to `files` and say so.
    - **Test:** does the test prove the spec?
 5. **Self code review:** bugs, edge cases, error handling, and leftover debug code. Run lint if the project has it. Fix what you find and re-run the task's test.
-6. **Mark it `done`** in `tasks.md`. Add a `progress.md` line: `T# done: what changed. Next: T#. Gotchas: …`. Tick it in the task list, make the next task in progress, and write the progress line.
+6. **Mark it `done` (✅)** and update the views (FORMAT.md, "Keeping the views current"). The log line is `✅ T# done: what changed (test result)`, plus a ⚠️ line for any gotcha. Tick it in the task list, make the next task in progress, and write the progress line in chat.
 7. **Pause or carry on.** Use `all` or `step` from the arguments if given, otherwise the `run:` mode.
    - **step:** ask **Continue with T#** (Recommended), **Run the rest in one go**, **Stop here**, or **Change something first**.
    - **all:** carry on. The progress line is the update after each task.
@@ -59,7 +59,7 @@ Repeat until every task is `done` or `skipped`.
 
 ## 3. All tasks done
 1. **Run everything together:** every task's test in order, then the project's `test-command`. Everything must pass. A test that passed alone but fails together usually means two tasks interfere: find out why, and fix it. Never report done with failing tests.
-2. Add a `progress.md` line with the result.
+2. Update the views (FORMAT.md, "Keeping the views current") with the result, e.g. `✅ All tests together pass (10/10)`.
 3. **Next step:** if `oneshot:start` invoked this, it carries on with the code review. Otherwise offer `/oneshot:review <name> code`. The code review stages the flow's files and checks them. Nothing gets committed.
 
 ## Rules

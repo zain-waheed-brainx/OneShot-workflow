@@ -40,6 +40,7 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 | `/oneshot:tasks <name>` | Splits the plan into tasks, each with its own test, or imports your tasks. Subagents study the code for bigger work. Writes `tasks.md` |
 | `/oneshot:review <name> plan\|code` | **plan:** reviews the plan and tasks together before any code, with a fresh-eyes subagent. **code:** after the build, a ticket review, then a code review |
 | `/oneshot:build <name>` | Builds task by task: test first, ticket review, self code review. Never commits |
+| `/oneshot:view` | Opens a live progress page for every flow in the project. A local script draws it, so it costs almost no tokens |
 
 ### Starting
 ```
@@ -96,13 +97,24 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 ## Files
 
 ```
-docs/oneshot/<name>/
-  plan.md        what and why: goal, scope, decisions, approach, risks, done when (status in front matter)
-  decisions.md   every grill-me question and answer
-  tasks.md       tasks with files, how, test command, status and test runs, plus "Done when"
-  review.md      plan + tasks review, then code review: every finding and how it ended
-  progress.md    one line per step; the last lines say what's next
+docs/oneshot/
+  README.md        index: every flow with its stage, progress bar and what it's doing now
+  <name>/
+    plan.md        what and why: goal, scope, decisions, approach, risks, done when
+    decisions.md   every grill-me question and answer
+    tasks.md       a status board on top (✅ 🔄 ⬜ ⏭️ ❌ per task), then the tasks with files, how and test
+    review.md      plan + tasks review, then code review: every finding and how it ended
+    progress.md    "Now" on top (stage, working on, next, blocked), then the log, newest first
 ```
+
+**Skimming:** open `docs/oneshot/README.md` for every flow at once. In a flow, the top of `tasks.md` shows what's done and what's not, and the top of `progress.md` shows where it stands right now. Task headings carry the same icons, so the outline in your editor or on GitHub shows status at a glance.
+
+## Progress you can see
+- **While it runs:** the session's task list has one item per task, updated as each task starts and finishes, plus a line after each task: `▓▓▓▓░░░░░░ 6/16 · T6 done · now T9`.
+- **Live page:** `/oneshot:view`, or run `oneshot-view` from the project in a terminal. It shows a card per flow, a task board, Now, recent activity, review status and the done-when checklist.
+  - It updates by itself within a second or two of a file changing, with a 5-minute refresh as a backup.
+  - It's read-only and on localhost only, and it stops after 2 hours with no file changes and no page loads.
+  - Nothing is committed: the page is drawn live from the markdown files.
 
 These are meant to be committed with the code, so reviewers can see why the work was done this way. The full format is in [`plugins/oneshot/FORMAT.md`](plugins/oneshot/FORMAT.md).
 
@@ -121,6 +133,7 @@ These are meant to be committed with the code, so reviewers can see why the work
 plugins/oneshot/
   .claude-plugin/plugin.json
   FORMAT.md                      file formats shared by all skills
-  skills/{start,plan,tasks,review,build}/SKILL.md
+  bin/oneshot-view               live progress page (Node, no dependencies)
+  skills/{start,plan,tasks,review,build,view}/SKILL.md
 ```
 After changing a skill, bump `version` in `plugin.json` and push. Users update with `claude plugin update oneshot@oneshot`.

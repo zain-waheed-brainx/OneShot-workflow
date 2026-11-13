@@ -13,14 +13,14 @@ First read `<this skill's base directory>/../../FORMAT.md`. It defines the files
 ## Ground rules (every OneShot step)
 - **No board, no worktrees, no branches.** Work happens in the current project folder, on the branch that's checked out. Never create, switch or delete branches.
 - **Never commit.** At the end the user gets the changes staged (only this flow's files) and a suggested commit message. They commit.
-- **The files are the memory.** After every step, update the flow's files and add a line to `progress.md`. Another session, or the same one a month later, continues from them alone.
+- **The files are the memory.** After every step, update the flow's files and update the views (FORMAT.md, "Keeping the views current"): the `tasks.md` board, **Now** and the log in `progress.md`, and the flow's row in `docs/oneshot/README.md`. Another session, or the same one a month later, continues from them alone.
 - **Ask with AskUserQuestion, one question at a time**, with 2-4 concrete options and the recommended one first, marked "(Recommended)".
 - **Show progress in the task list** (the session's checklist tool, never printed as text). The steps are: Plan · Tasks · Review plan + tasks · Approve · Build · Code review · Hand over. Steps already done (when continuing) start as done. Move to the next step in the same message as the step's first tool call. While building, `oneshot:build` expands the Build step into one item per task, as its "Progress you can see" section describes, and the list goes back to these steps after the build.
 
 ## 1. Work out what was given
 Read the arguments:
 - **Old folder:** if `docs/flow/` exists (from before the rename to OneShot), offer to move its folders to `docs/oneshot/` with `git mv` (or `mv` if they're untracked), then continue as normal.
-- **Nothing:** list the folders in `docs/oneshot/`. For each, show its title, where it stands (see FORMAT.md) and the last line of `progress.md`.
+- **Nothing:** list the folders in `docs/oneshot/`. Use `docs/oneshot/README.md` if it exists: show each flow's title, stage, progress and **Now**. If it's missing, read each flow's **Now** instead.
   - none: ask what to work on (details, a plan, or tasks);
   - some: ask which to continue, with **Start something new** as the last option.
 - **The name of an existing flow** (a folder in `docs/oneshot/`): continue it (step 3).
@@ -33,7 +33,7 @@ Read the arguments:
 
 ## 2. Create the flow
 1. Pick a title and a `<name>` slug, and show both, e.g. "Saving to `docs/oneshot/export-audit-log/`". Change them if the user wants.
-2. Create the folder, and `progress.md` with its first line saying what was given, e.g. `· started from details`, `· started from plan docs/specs/export.md`, or `· started from tasks (pasted)`.
+2. Create the folder, and `progress.md` with **Now** (Stage: Planning) and a first log line saying what was given, e.g. `🚀 Started from details`, `🚀 Started from plan docs/specs/export.md`, or `🚀 Started from tasks (pasted)`. Add the flow's row to `docs/oneshot/README.md`, creating the file if needed. Mention once that `/oneshot:view` opens a live progress page, if they'd like to watch.
 3. Check `git status`. If there are uncommitted changes that aren't part of this work, say so once: the build stages only this flow's files, so they stay out of it.
 
 ## 3. Run the flow
@@ -53,7 +53,7 @@ Go from wherever the flow stands, using the state table in FORMAT.md. Invoke eac
    - the build and run modes;
    - any `accepted` review items.
 
-   Ask: **Approve and build** (Recommended), **Change something**, or **Stop here** (the files are saved; continue later with `/oneshot:start <name>`). On approve, set `status: approved` in `plan.md` and in `tasks.md`, and log it in `progress.md`.
+   Ask: **Approve and build** (Recommended), **Change something**, or **Stop here** (the files are saved; continue later with `/oneshot:start <name>`). On approve, set `status: approved` in `plan.md` and in `tasks.md`, and update the views (FORMAT.md, "Keeping the views current").
 5. **Build** (`oneshot:build <name>`): test first, task by task.
 6. **Code review** (`oneshot:review <name> code`): ticket review of the whole change against the plan, then code review.
 7. **Hand over:**
@@ -65,7 +65,7 @@ Go from wherever the flow stands, using the state table in FORMAT.md. Invoke eac
    Tell them to commit when ready. If the repo's commit hook stages everything (e.g. `git add -A`), warn them that it would also pick up the files left out.
 
 ## Stopping and continuing
-The user can stop at any point. Before stopping, add a `progress.md` line saying what's done and what's next. `/oneshot:start <name>` (or `/oneshot:start` with no arguments, then pick the flow) continues from the files.
+The user can stop at any point. Before stopping, update the views (FORMAT.md, "Keeping the views current"), so **Now** says what's done and what's next. `/oneshot:start <name>` (or `/oneshot:start` with no arguments, then pick the flow) continues from the files.
 
 ## Summary at the end
 Write 3-5 lines:

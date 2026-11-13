@@ -1,0 +1,313 @@
+#!/usr/bin/env node
+// OneShot live progress page. Reads docs/oneshot/*/ (markdown) and serves a read-only page on localhost that
+// updates when the files change (plus a 5-minute refresh as a backup). No dependencies; Claude isn't involved.
+// Usage: oneshot-view [--dir <project>] [--port <n>] [--no-open]
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { execFileSync, spawn } = require('child_process');
+
+const args = process.argv.slice(2);
+const USAGE = 'Usage: oneshot-view [--dir <project>] [--port <1024-65000>] [--no-open]';
+function flag(name, def) {
+  const i = args.indexOf(`--${name}`);
+  if (i < 0) return def;
+  const v = args[i + 1];
+  if (v === undefined || v.startsWith('--')) { console.error(`--${name} needs a value\n${USAGE}`); process.exit(2); }
+  return v;
+}
+const noOpen = args.includes('--no-open');
+const PORT = Number(flag('port', 4330));
+if (!Number.isInteger(PORT) || PORT < 1024 || PORT > 65000) { console.error(`--port must be a number from 1024 to 65000\n${USAGE}`); process.exit(2); }
+const IDLE_MS = 2 * 60 * 60 * 1000; // stop after 2 hours with no file changes and no page loads
+const POLL_MS = 2000;               // how often the files are checked for changes
+
+function projectRoot(start) {
+  try { return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: start, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
+  catch { return start; }
+}
+const ROOT = projectRoot(path.resolve(flag('dir', process.cwd())));
+const DIRS = ['docs/oneshot', 'docs/flow'].map(d => path.join(ROOT, d)); // docs/flow: before the rename
+
+// ---------- reading the files ----------
+const read = f => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
+const stripComment = v => v.replace(/\s+#.*$/, '').trim();
+
+function frontMatter(text) {
+  const m = text.match(/^---\n([\s\S]*?)\n---/);
+  const out = {};
+  if (m) for (const line of m[1].split('\n')) {
+    const kv = line.match(/^([\w-]+):\s*(.*)$/);
+    if (kv) out[kv[1]] = stripComment(kv[2]);
+  }
+  return out;
+}
+
+// The body of a "## <name>" section (until the next "## " heading).
+function section(text, name) {
+  const re = new RegExp(`^## ${name}\\s*$([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm');
+  const m = text.match(re);
+  return m ? m[1] : '';
+}
+
+const ICON_STATUS = { '✅': 'done', '🔄': 'doing', '⬜': 'todo', '⏭️': 'skipped', '⏭': 'skipped', '❌': 'blocked' };
+
+function parseTasks(text) {
+  const tasks = [];
+  const re = /^## (?:(\S+)\s+)?(T\d+):\s*(.+)$/gm;
+  const heads = [...text.matchAll(re)];
+  heads.forEach((h, i) => {
+    const body = text.slice(h.index + h[0].length, i + 1 < heads.length ? heads[i + 1].index : undefined).split(/^## /m)[0];
+    const field = k => { const m = body.match(new RegExp(`^- ${k}:\\s*(.*)$`, 'm')); return m ? stripComment(m[1]) : ''; };
+    const status = (field('status') || ICON_STATUS[h[1]] || 'todo').toLowerCase();
+    tasks.push({ id: h[2], title: h[3].trim(), status, test: field('test'), runs: field('test runs'), after: field('after') });
+  });
+  return tasks;
+}
+
+function checklist(text) {
+  return [...text.matchAll(/^- \[( |x|X)\]\s+(.*)$/gm)].map(m => ({ done: m[1] !== ' ', text: m[2].trim() }));
+}
+
+function parseNow(text) {
+  const now = {};
+  for (const m of section(text, 'Now').matchAll(/^- \*\*(.+?):\*\*\s*(.*)$/gm)) now[m[1].toLowerCase()] = m[2].trim();
+  return now;
+}
+
+function parseLog(text) {
+  const out = [];
+  const body = section(text, 'Log');
+  if (body) {
+    let date = '';
+    for (const line of body.split('\n')) {
+      const d = line.match(/^###\s+(.+)$/);
+      if (d) { date = d[1].trim(); continue; }
+      const l = line.match(/^- (\d{1,2}:\d{2})\s+(.*)$/);
+      if (l) out.push({ when: `${date} ${l[1]}`.trim(), text: l[2] });
+    }
+    return out; // already newest first
+  }
+  // Older format: "- 2026-11-13 14:10 · text", oldest first.
+  for (const m of text.matchAll(/^- (\d{4}-\d{2}-\d{2}(?: \d{1,2}:\d{2})?)\s*·?\s*(.*)$/gm)) out.push({ when: m[1], text: m[2] });
+  return out.reverse();
+}
+
+function parseReview(text) {
+  const counts = { open: 0, fixed: 0, accepted: 0, skipped: 0 };
+  const open = [];
+  for (const m of text.matchAll(/^- \[(open|fixed|accepted|skipped)\]\s*(.*)$/gim)) {
+    const k = m[1].toLowerCase(); counts[k]++;
+    if (k === 'open') open.push(m[2].trim());
+  }
+  const sections = [...text.matchAll(/^## (.+)$/gm)].map(m => m[1].trim());
+  return { counts, open, sections };
+}
+
+function stage(plan, tk, tasks) {
+  const ps = plan.status, ts = tk.status;
+  if (!ps || ps === 'drafting') return { key: 'planning', label: '🧭 Planning' };
+  if (!ts) return { key: 'tasks', label: '🧭 Tasks' };
+  if (ts === 'draft') return { key: 'review', label: '🔍 Review' };
+  if (ts === 'reviewed') return { key: 'approval', label: '⏸️ Waiting for approval' };
+  if (ts === 'done') return { key: 'ready', label: '✅ Ready to commit' };
+  const left = tasks.filter(t => !['done', 'skipped'].includes(t.status));
+  if (tasks.length && !left.length) return { key: 'code-review', label: '🔍 Code review' };
+  return { key: 'build', label: '🔄 Build' };
+}
+
+function loadFlow(dir, name) {
+  const f = n => read(path.join(dir, name, n));
+  const planText = f('plan.md'), tasksText = f('tasks.md'), progressText = f('progress.md'), reviewText = f('review.md');
+  const plan = frontMatter(planText), tk = frontMatter(tasksText);
+  const tasks = parseTasks(tasksText);
+  const review = parseReview(reviewText);
+  const doneWhen = checklist(section(tasksText, 'Done when') || section(planText, 'Done when'));
+  const title = plan.title || (planText.match(/^# (.+)$/m) || [])[1] || name;
+  const counted = tasks.filter(t => t.status !== 'skipped');
+  let updated = 0;
+  for (const n of ['plan.md', 'tasks.md', 'progress.md', 'review.md']) {
+    try { updated = Math.max(updated, fs.statSync(path.join(dir, name, n)).mtimeMs); } catch { /* file not written yet */ }
+  }
+  return {
+    name, title, folder: path.relative(ROOT, path.join(dir, name)),
+    planStatus: plan.status || '', tasksStatus: tk.status || '', build: tk.build || '', run: tk.run || '',
+    stage: stage(plan, tk, tasks),
+    tasks, progress: { done: counted.filter(t => t.status === 'done').length, total: counted.length },
+    now: parseNow(progressText), log: parseLog(progressText).slice(0, 25),
+    review, doneWhen, updated
+  };
+}
+
+function loadAll() {
+  const flows = [];
+  for (const dir of DIRS) {
+    let names = [];
+    try { names = fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); } catch { continue; }
+    for (const n of names) if (['plan.md', 'tasks.md', 'progress.md'].some(f => fs.existsSync(path.join(dir, n, f)))) flows.push(loadFlow(dir, n));
+  }
+  flows.sort((a, b) => b.updated - a.updated);
+  return { project: path.basename(ROOT), root: ROOT, generated: Date.now(), flows };
+}
+
+// ---------- server ----------
+const clients = new Set();
+let lastActivity = Date.now(); // a page load, a data fetch, or a file change
+
+function page() { return PAGE; }
+
+function serve(port, tries = 20) {
+  const server = http.createServer((req, res) => {
+    const host = req.headers.host || '';
+    if (![`localhost:${port}`, `127.0.0.1:${port}`].includes(host)) { res.writeHead(403); return res.end('Forbidden'); }
+    const url = new URL(req.url, 'http://localhost');
+    if (url.pathname === '/' || url.pathname === '/api/data') lastActivity = Date.now();
+    if (url.pathname === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(page()); }
+    if (url.pathname === '/api/data') { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); return res.end(JSON.stringify(loadAll())); }
+    if (url.pathname === '/api/whoami') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ app: 'oneshot-view', root: ROOT })); }
+    if (url.pathname === '/events') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
+      res.write('retry: 3000\n\n');
+      clients.add(res);
+      req.on('close', () => { clients.delete(res); });
+      return;
+    }
+    res.writeHead(404); res.end('Not found');
+  });
+  server.on('error', e => {
+    if (e.code === 'EADDRINUSE' && tries > 0 && port < 65000) return serve(port + 1, tries - 1);
+    console.error(e.message); process.exit(1);
+  });
+  server.listen(port, '127.0.0.1', () => {
+    const link = `http://localhost:${port}`;
+    console.log(`OneShot view for ${ROOT}\n${link}\n(updates when docs/oneshot changes; stops after 2 hours with no changes and no page loads; Ctrl-C to stop)`);
+    if (!noOpen) openBrowser(link);
+    watch();
+    setInterval(() => {
+      for (const c of clients) c.write(': ping\n\n'); // keep connections alive
+      if (Date.now() - lastActivity > IDLE_MS) {
+        console.log('Stopping: no file changes or page loads for 2 hours.');
+        for (const c of clients) c.write('event: stopped\ndata: {}\n\n');
+        setTimeout(() => process.exit(0), 200);
+      }
+    }, 60 * 1000);
+  });
+}
+
+function notify() { for (const c of clients) c.write('event: change\ndata: {}\n\n'); }
+
+// Checks the flow files' modification times every 2 seconds. Polling a handful of small files is cheap and
+// works on every OS and Node version, and it notices docs/oneshot even if it's created after the viewer starts.
+function signature() {
+  const parts = [];
+  for (const dir of DIRS) {
+    let names = [];
+    try { names = fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); } catch { continue; }
+    try { parts.push(`${dir}/README.md:${fs.statSync(path.join(dir, 'README.md')).mtimeMs}`); } catch { /* no index yet */ }
+    for (const n of names) for (const f of ['plan.md', 'tasks.md', 'progress.md', 'review.md']) {
+      try { parts.push(`${n}/${f}:${fs.statSync(path.join(dir, n, f)).mtimeMs}`); } catch { /* not written yet */ }
+    }
+  }
+  return parts.join('|');
+}
+
+function watch() {
+  let last = signature();
+  setInterval(() => {
+    const now = signature();
+    if (now !== last) { last = now; lastActivity = Date.now(); notify(); }
+  }, POLL_MS);
+}
+
+function openBrowser(link) {
+  const cmd = process.platform === 'darwin' ? ['open', [link]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', link]] : ['xdg-open', [link]];
+  try { spawn(cmd[0], cmd[1], { stdio: 'ignore', detached: true }).unref(); } catch { /* the link is printed */ }
+}
+
+// If a viewer for this project is already running, just open it.
+async function existing(start) {
+  for (let p = start; p < Math.min(start + 20, 65001); p++) {
+    try {
+      const r = await fetch(`http://localhost:${p}/api/whoami`, { signal: AbortSignal.timeout(400) });
+      const j = await r.json();
+      if (j.app === 'oneshot-view' && j.root === ROOT) return p;
+    } catch { /* nothing there */ }
+  }
+  return null;
+}
+
+const PAGE = String.raw`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OneShot progress</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--text:#1d2330;--muted:#6b7280;--border:#e3e6eb;--accent:#4f6bed;--ok:#1f9d55;--warn:#c27c0e;--bad:#d64545;--track:#e8ebf0}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--panel:#1c2027;--text:#e6e8eb;--muted:#9aa3ad;--border:#2c313a;--accent:#7d93ff;--ok:#3ccf7a;--warn:#e0a63b;--bad:#ff6b6b;--track:#2a2f37}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0}
+h1{font-size:16px;margin:0}.muted{color:var(--muted)}.live{font-size:12px}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer}
+.card.on{border-color:var(--accent)}.card h2{font-size:15px;margin:0 0 4px}
+.bar{height:8px;background:var(--track);border-radius:4px;overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--ok)}
+.detail{margin-top:18px;display:grid;grid-template-columns:2fr 1fr;gap:12px}
+@media (max-width:860px){.detail{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.box h3{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:700px){.cols{grid-template-columns:1fr 1fr}}
+.col h4{margin:0 0 6px;font-size:12px;color:var(--muted)}
+.task{border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:6px;font-size:13px}
+.task b{font-family:ui-monospace,Menlo,monospace}.task .t{font-size:12px;color:var(--muted);margin-top:4px}
+.doing{border-color:var(--warn)}.blocked{border-color:var(--bad)}
+.now div{margin-bottom:4px}.log{list-style:none;padding:0;margin:0;font-size:13px}.log li{padding:5px 0;border-bottom:1px solid var(--border)}
+.log .w{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:12px;margin-right:6px}
+.pill{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:0 8px;margin:0 4px 4px 0;font-size:12px}
+.empty{color:var(--muted);text-align:center;padding:40px}
+</style></head><body>
+<header><div><h1>OneShot · <span id="proj"></span></h1><div class="muted" id="root"></div></div>
+<div class="live muted"><span id="state">connecting…</span> · updated <span id="when">-</span></div></header>
+<main><div class="cards" id="cards"></div><div id="detail"></div></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let data=null,sel=null;
+try{sel=localStorage.getItem('oneshot-sel')}catch{}
+const bar=(d,t)=>'<div class="bar"><i style="width:'+(t?Math.round(100*d/t):0)+'%"></i></div>';
+function render(){
+  $('#proj').textContent=data.project;$('#root').textContent=data.root;
+  $('#when').textContent=new Date(data.generated).toLocaleTimeString();
+  if(!data.flows.length){$('#cards').innerHTML='';$('#detail').innerHTML='<div class="empty">No flows yet. Start one with <code>/oneshot:start</code>.</div>';return}
+  if(!data.flows.some(f=>f.name===sel))sel=data.flows[0].name;
+  $('#cards').innerHTML=data.flows.map(f=>'<div class="card'+(f.name===sel?' on':'')+'" data-n="'+esc(f.name)+'"><h2>'+esc(f.title)+'</h2><div class="muted">'+esc(f.stage.label)+'</div>'
+    +bar(f.progress.done,f.progress.total)+'<div class="muted">'+f.progress.done+'/'+f.progress.total+' tasks'+(f.now['working on']?' · now '+esc(f.now['working on']):'')+'</div></div>').join('');
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{sel=c.dataset.n;try{localStorage.setItem('oneshot-sel',sel)}catch{};render()});
+  const f=data.flows.find(x=>x.name===sel);
+  const col=(k,label)=>{const ts=f.tasks.filter(t=>k.includes(t.status));return '<div class="col"><h4>'+label+' ('+ts.length+')</h4>'+ts.map(t=>'<div class="task '+esc(t.status)+'"><b>'+esc(t.id)+'</b> '+esc(t.title)+'<div class="t">'+esc(t.runs&&t.runs!=='-'?t.runs:(t.test?'test: not run':''))+'</div></div>').join('')+'</div>'};
+  const now=Object.entries(f.now).map(([k,v])=>'<div><b>'+esc(k[0].toUpperCase()+k.slice(1))+':</b> '+esc(v)+'</div>').join('')||'<div class="muted">No “Now” section yet</div>';
+  const rv=f.review.counts;
+  $('#detail').innerHTML='<div class="detail"><div>'
+    +'<div class="box"><h3>Tasks · '+f.progress.done+'/'+f.progress.total+'</h3>'+(f.tasks.length?'<div class="cols">'+col(['todo'],'⬜ To do')+col(['doing','blocked'],'🔄 In progress')+col(['done'],'✅ Done')+col(['skipped'],'⏭️ Skipped')+'</div>':'<div class="muted">No tasks yet</div>')+'</div>'
+    +'<div class="box" style="margin-top:12px"><h3>Recent activity</h3><ul class="log">'+(f.log.map(l=>'<li><span class="w">'+esc(l.when)+'</span>'+esc(l.text)+'</li>').join('')||'<li class="muted">Nothing logged yet</li>')+'</ul></div>'
+    +'</div><div>'
+    +'<div class="box now"><h3>Now</h3>'+now+'</div>'
+    +'<div class="box" style="margin-top:12px"><h3>Review</h3>'+(f.review.sections.length?'<span class="pill">fixed '+rv.fixed+'</span><span class="pill">accepted '+rv.accepted+'</span><span class="pill">skipped '+rv.skipped+'</span><span class="pill" style="color:var(--bad)">open '+rv.open+'</span>'+f.review.open.map(o=>'<div class="muted">• '+esc(o)+'</div>').join(''):'<div class="muted">Not reviewed yet</div>')+'</div>'
+    +'<div class="box" style="margin-top:12px"><h3>Done when</h3>'+(f.doneWhen.map(d=>'<div>'+(d.done?'✅':'⬜')+' '+esc(d.text)+'</div>').join('')||'<div class="muted">-</div>')+'</div>'
+    +'<div class="box muted" style="margin-top:12px;font-size:12px">'+esc(f.folder)+(f.build?' · build '+esc(f.build):'')+(f.run?' · run '+esc(f.run):'')+'</div>'
+    +'</div></div>';
+}
+async function load(){try{data=await (await fetch('/api/data',{cache:'no-store'})).json();render()}catch{$('#state').textContent='viewer stopped'}}
+function live(){const es=new EventSource('/events');es.onopen=()=>{$('#state').textContent='● live'};es.addEventListener('change',load);es.addEventListener('stopped',()=>{es.close();$('#state').textContent='viewer stopped (run /oneshot:view to restart)'});es.onerror=()=>{$('#state').textContent='reconnecting…'}}
+load();live();setInterval(load,5*60*1000);
+</script></body></html>`;
+
+(async () => {
+  const start = PORT;
+  const running = await existing(start);
+  if (running) {
+    const link = `http://localhost:${running}`;
+    console.log(`OneShot view for ${ROOT} is already running\n${link}`);
+    if (!noOpen) openBrowser(link);
+    return;
+  }
+  serve(start);
+})();

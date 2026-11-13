@@ -44,6 +44,6 @@ This step works out **how** the plan gets built. It needs `docs/oneshot/<name>/p
 - **Run mode:** **Task by task** (Recommended: pause after each so you can check or stop) or **All in one go** (stops only on a failure or an open decision).
 
 ## 4. Save
-Write `tasks.md` with `status: draft`, the modes, `test-command`, every task (`status: todo`, `test runs: -`), and "Done when" copied from the plan. Add a `progress.md` line with the number of tasks.
+Write `tasks.md` with `status: draft`, the modes and `test-command`, then the board (every task ⬜, test `not run`), every task (`status: todo`, a ⬜ heading, `test runs: -`), and "Done when" copied from the plan. Then update the views (FORMAT.md, "Keeping the views current"), e.g. log `🧭 6 tasks written`.
 
 Then, if `oneshot:start` invoked this, it carries on with the review. Otherwise offer `/oneshot:review <name> plan`.

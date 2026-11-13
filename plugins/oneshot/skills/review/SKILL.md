@@ -25,7 +25,7 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
    - A finding that changes **what** gets built gets its own grill-style question, and the answer is logged in `decisions.md`.
    - Apply the chosen fixes to `plan.md` and `tasks.md`.
    - Mark each finding `[fixed]`, or `[accepted]` with the user's reason.
-5. Set `status: reviewed` in `tasks.md` and add a `progress.md` line. The flow then goes to approval: `oneshot:start` asks, or, standalone, offer `/oneshot:start <name>`.
+5. Set `status: reviewed` in `tasks.md` and update the views (FORMAT.md, "Keeping the views current"), e.g. log `🔍 Plan + tasks reviewed: 2 findings, fixed`. The flow then goes to approval: `oneshot:start` asks, or, standalone, offer `/oneshot:start <name>`.
 
 ## code: after the build
 1. **Ticket review first**, by you, without a review skill. Read the whole change (`git diff` plus new files, limited to the task files) and check it against the plan:
@@ -43,7 +43,7 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
 
    If a skill asks whether to review staged or all changes, choose staged only.
 5. **Record and fix.** Write every finding to `review.md` under `## Code review · <date>`, naming the reviewer. Fix every finding, or skip or accept it with a reason the user agrees to. Re-stage after fixes, and re-run the affected task tests and the full test command.
-6. Add a `progress.md` line. If every finding is closed, set `status: done` in `tasks.md`.
+6. If every finding is closed, set `status: done` in `tasks.md`. Then update the views (FORMAT.md, "Keeping the views current"): Stage becomes ✅ Ready to commit.
 7. **Re-stage the flow's files** (`git add -- docs/oneshot/<name>/`), because `review.md`, `progress.md` and `tasks.md` changed after step 2. Then check `git diff --cached --stat`, so the hand-over shows what's really staged.
 
 **Never commit.** The hand-over (in `oneshot:start`) gives the user the staged files and a commit message.

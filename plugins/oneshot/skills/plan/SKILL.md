@@ -24,7 +24,7 @@ Interview the user until you both understand the work the same way. Walk each br
 - **Log every answer** in `decisions.md`, as `## Q<n>. <question>`, then `**Answer:** <answer>. Why: <one line>`.
 - **Keep the plan current.** Every 2-3 answers, and at the end, rewrite `plan.md` so it fills in as you go. Keep `status: drafting` until the end, and update `updated:`.
 - **"No preference":** take the recommended option, mark it *(Claude's call)* in both files, and keep going. It is never approval.
-- **When to stop:** when nothing important about **what** to build is left open. Set `status: validated`, and add a `progress.md` line with the number of decisions.
+- **When to stop:** when nothing important about **what** to build is left open. Set `status: validated`, and update the views (FORMAT.md, "Keeping the views current"), e.g. log `🧭 Plan validated: 8 decisions`.
 
 ## The plan
 Keep it short. A builder should be able to work from it a month from now with nothing else:
