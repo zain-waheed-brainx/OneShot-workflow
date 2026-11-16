@@ -20,7 +20,7 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
    - **Order:** dependencies make sense, there are no cycles, tasks that share files run in sequence, and `parallel: yes` only where it's safe.
    - **Clarity:** each `How` is specific enough to build without guessing, and names the files.
    - **Risks:** the plan's risks are handled by a task or marked as accepted.
-3. **Merge** your findings with the subagent's, dropping duplicates, and write them to `review.md` as `[open]`.
+3. **Merge** your findings with the subagent's, dropping duplicates, and write them to `review.md` as one bullet per finding in exactly this form: `- [open] #N Severity: file:line: problem. Fix: ...`. Every finding line must start with `- [` and use one of the statuses open, fixed, accepted or skipped. Never use numbered lists such as `1. [open]`, because the progress viewer is built around lines that start with `- [status]` (it tolerates numbered ones, but don't rely on it). When a finding is resolved, change its status in place and keep the rest of the line.
 4. **Fix with approval.** Show the findings as a numbered list, each with its fix in one line. Ask with AskUserQuestion (multiSelect) which fixes to apply. Options: **All of them** (Recommended), individual items, or **None**.
    - A finding that changes **what** gets built gets its own grill-style question, and the answer is logged in `decisions.md`.
    - Apply the chosen fixes to `plan.md` and `tasks.md`.
@@ -42,7 +42,7 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
    3. a careful read of the diff.
 
    If a skill asks whether to review staged or all changes, choose staged only.
-5. **Record and fix.** Write every finding to `review.md` under `## Code review · <date>`, naming the reviewer. Fix every finding, or skip or accept it with a reason the user agrees to. Re-stage after fixes, and re-run the affected task tests and the full test command.
+5. **Record and fix.** Write every finding to `review.md` under `## Code review · <date>`, naming the reviewer, in the same one-bullet form as step 3 of the plan review (`- [open] #N Severity: file:line: problem. Fix: ...`, never numbered). Fix every finding, or skip or accept it with a reason the user agrees to. Re-stage after fixes, and re-run the affected task tests and the full test command.
 6. If every finding is closed, set `status: done` in `tasks.md`. Then update the views (FORMAT.md, "Keeping the views current"): Stage becomes ✅ Ready to commit.
 7. **Re-stage the flow's files** (`git add -- docs/oneshot/<name>/`), because `review.md`, `progress.md` and `tasks.md` changed after step 2. Then check `git diff --cached --stat`, so the hand-over shows what's really staged.
 

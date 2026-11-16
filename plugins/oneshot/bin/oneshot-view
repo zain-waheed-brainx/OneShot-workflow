@@ -96,7 +96,7 @@ function parseLog(text) {
 function parseReview(text) {
   const counts = { open: 0, fixed: 0, accepted: 0, skipped: 0 };
   const open = [];
-  for (const m of text.matchAll(/^- \[(open|fixed|accepted|skipped)\]\s*(.*)$/gim)) {
+  for (const m of text.matchAll(/^(?:- |\d+\. )\[(open|fixed|accepted|skipped)\]\s*(.*)$/gim)) {
     const k = m[1].toLowerCase(); counts[k]++;
     if (k === 'open') open.push(m[2].trim());
   }
