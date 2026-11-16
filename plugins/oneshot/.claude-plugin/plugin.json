@@ -1,6 +1,6 @@
 {
   "name": "oneshot",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A light workflow inside your project: grill-me planning, tasks with a test each, a review of plan and tasks together, then a test-first build with ticket and code review. Everything is saved as files in docs/oneshot/<name>/. No board, no worktrees.",
   "author": {
     "name": "Zain Waheed"

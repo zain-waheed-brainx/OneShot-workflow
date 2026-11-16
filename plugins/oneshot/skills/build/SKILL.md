@@ -46,12 +46,12 @@ Repeat until every task is `done` or `skipped`.
    - **Manual tests:** describe how to check it, and ask the user to confirm that it works.
 
    **Parallel batch:** launch one subagent per task in a single message, all in this folder. Give each one its task, the plan's decisions, and the steps above. Tell it to change **only its own files**, not to stage or commit anything, and to report its before-run, what it changed, and anything it couldn't do. When they're back, run each task's test yourself, one at a time.
-4. **Ticket review** (yourself, no skill). Read the task's diff:
+4. **Mark it `review` (🔍)** and update the views (FORMAT.md, "Keeping the views current"): the test passes, the task is now under review. Keep it the in-progress item in the task list. Then the **ticket review** (yourself, no skill). Read the task's diff:
    - **Spec:** does it do everything the task's `How` says, following the plan's decisions?
    - **Scope:** does it do nothing outside the plan? A file outside the task's `files` is fine only if it clearly belongs to the task: add it to `files` and say so.
    - **Test:** does the test prove the spec?
 5. **Self code review:** bugs, edge cases, error handling, and leftover debug code. Run lint if the project has it. Fix what you find and re-run the task's test.
-6. **Mark it `done` (✅)** and update the views (FORMAT.md, "Keeping the views current"). The log line is `✅ T# done: what changed (test result)`, plus a ⚠️ line for any gotcha. Tick it in the task list, make the next task in progress, and write the progress line in chat.
+6. **Mark it `done` (✅)** (a task only leaves `review` once both reviews are clean; a review fix means setting it back to `doing`, fixing it, re-running its test, and returning to step 4) and update the views (FORMAT.md, "Keeping the views current"). The log line is `✅ T# done: what changed (test result)`, plus a ⚠️ line for any gotcha. Tick it in the task list, make the next task in progress, and write the progress line in chat.
 7. **Pause or carry on.** Use `all` or `step` from the arguments if given, otherwise the `run:` mode.
    - **step:** ask **Continue with T#** (Recommended), **Run the rest in one go**, **Stop here**, or **Change something first**.
    - **all:** carry on. The progress line is the update after each task.

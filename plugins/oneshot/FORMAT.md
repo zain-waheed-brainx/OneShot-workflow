@@ -15,7 +15,7 @@ docs/oneshot/
     progress.md    "Now" on top (where things stand), then the log, newest first
 ```
 
-**Icons** (used in the board, in task headings, and in the index): ✅ done · 🔄 in progress · ⬜ to do · ⏭️ skipped · ❌ blocked.
+**Icons** (used in the board, in task headings, and in the index): ✅ done · 🔄 in progress · 🔍 under review · ⬜ to do · ⏭️ skipped · ❌ blocked.
 
 ## plan.md
 ```markdown
@@ -59,18 +59,19 @@ updated: 2026-11-13
 ---
 # Tasks: Export audit log as CSV
 
-**Progress:** ▓▓▓░░░░░░░ 2/6 · **Now:** T3 Export endpoint · **Updated:** 2026-11-13 15:40
+**Progress:** ▓▓▓▓▓░░░░░ 3/6 · **Now:** T4 Checksum file · **Updated:** 2026-11-13 15:40
 
 | | Task | Test |
 |---|---|---|
 | ✅ | T1 Add audit:export permission | passes |
 | ✅ | T2 CSV writer | passes |
-| 🔄 | T3 Export endpoint | failing (test written, no code yet) |
-| ⬜ | T4 Checksum file | not run |
-| ⏭️ | T5 Email the link | skipped: out of scope |
+| ✅ | T3 Export endpoint | passes |
+| 🔍 | T4 Checksum file | passes, under review |
+| ⬜ | T5 Rate limit | not run |
+| ⏭️ | T6 Email the link | skipped: out of scope |
 
 ## ✅ T1: Add audit:export permission
-- status: done          # todo | doing | done | skipped | blocked
+- status: done          # todo | doing | review | done | skipped | blocked
 - after: -              # ids this task depends on, e.g. T1, T2
 - parallel: no          # yes only if it has no dependencies and shares no files with other tasks
 - files: src/auth/permissions.ts, tests/auth/audit-export.test.ts
@@ -85,7 +86,7 @@ Notes: follows the pattern in src/auth/roles.ts
 ```
 - Every task has its own `test`: a command that runs only that task's test, and one line on what it proves. Use `test: manual: <how to check> (why it can't be automated)` only when an automated test is impossible.
 - `files` lists every file the task changes or adds, including its test file.
-- **The board** sits right under the title: the progress line, then one row per task in build order. Each row has the icon, the id and title, and the test state (`not run` · `failing (…)` · `passes` · `manual` · `skipped: <why>`). The progress bar has 10 cells: filled = done ÷ total × 10, rounded to the nearest cell.
+- **The board** sits right under the title: the progress line, then one row per task in build order. Each row has the icon, the id and title, and the test state (`not run` · `failing (…)` · `passes` · `passes, under review` · `manual` · `skipped: <why>`). The progress bar has 10 cells: filled = done ÷ total × 10, rounded to the nearest cell.
 - **Each task heading** starts with the same icon as its `status`: `## 🔄 T3: Export endpoint`.
 
 ## review.md
