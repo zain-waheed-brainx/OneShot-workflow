@@ -36,7 +36,7 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 | Command | What it does |
 |---|---|
 | **`/oneshot:start`** | **The main entry.** Give it details, an existing plan, or existing tasks, or nothing to continue a flow. It runs every step below in order |
-| `/oneshot:plan <name>` | Grill-me planning, one question at a time, or validating an existing plan. Writes `plan.md` and `decisions.md` |
+| `/oneshot:plan <name>` | Grill-me planning that remembers your preferences and asks only what's new, or validating an existing plan. Writes `plan.md` and `decisions.md` |
 | `/oneshot:tasks <name>` | Splits the plan into tasks, each with its own test, or imports your tasks. Subagents study the code for bigger work. Writes `tasks.md` |
 | `/oneshot:review <name> plan\|code` | **plan:** reviews the plan and tasks together before any code, with a fresh-eyes subagent. **code:** after the build, a ticket review, then a code review |
 | `/oneshot:build <name>` | Builds task by task: test first, ticket review, self code review. Never commits |
@@ -55,14 +55,16 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 
 ## How a flow runs
 
-1. **Plan.** Claude reads the code, then asks one question at a time, with concrete options and its recommendation first.
+1. **Plan.** Claude reads the code, then asks only what it needs, up to 4 related questions per screen, with concrete options and its recommendation first.
+   - Questions about the work itself are always asked. Your usual preferences are applied and shown on one confirm screen at the end (see [Preferences](#preferences)).
+   - Small points that don't change the plan go in the plan as "Assumed" lines you can edit, instead of being asked.
    - Each answer goes in `decisions.md`, and `plan.md` fills in as you go.
    - If you answer "No preference", Claude takes the recommended option and marks it *(Claude's call)*.
    - An existing plan can be **validated**: Claude lists its gaps, then grills you only on those.
 2. **Tasks.** The plan is split into tasks, usually 3-10.
    - Each task has its files, its steps, and **its own test**: a command that runs only that test, plus what it proves.
    - Tasks that share files run in sequence.
-   - You choose the **build** mode (one task at a time, or parallel subagents) and the **run** mode (pause after each task, or all in one go).
+   - You choose the **build** mode (one task at a time, or parallel subagents) and the **run** mode (pause after each task, or all in one go). Once you've picked the same ones twice, they're used automatically and shown at approval.
 3. **Review: plan and tasks together.** Claude and a fresh-eyes subagent check:
    - every plan step and "Done when" item is covered;
    - there's no extra scope;
@@ -105,9 +107,34 @@ docs/oneshot/
     tasks.md       a status board on top (✅ 🔄 ⬜ ⏭️ ❌ per task), then the tasks with files, how and test
     review.md      plan + tasks review, then code review: every finding and how it ended
     progress.md    "Now" on top (stage, working on, next, blocked), then the log, newest first
+  preferences.md   this project's remembered answers
+
+~/.claude/oneshot/preferences.md   build and run modes, shared by all your projects
 ```
 
 **Skimming:** open `docs/oneshot/README.md` for every flow at once. In a flow, the top of `tasks.md` shows what's done and what's not, and the top of `progress.md` shows where it stands right now. Task headings carry the same icons, so the outline in your editor or on GitHub shows status at a glance.
+
+## Preferences
+Planning remembers your answers, so after the first few flows most questions are about the work itself.
+
+| Kind of question | Example | What happens |
+|---|---|---|
+| About the work | what it does, scope, edge cases, data | Always asked. Never remembered or assumed |
+| A settled preference | "validation in Form Request classes", "feature tests over unit tests" | Not asked. Applied, then listed on the confirm screen |
+| A new or unsettled preference | something you haven't answered, or answer differently each time | Asked, with your last answer as the recommendation |
+
+- **Answered once:** asked again next time, with that answer recommended.
+- **Same answer twice in a row:** applied automatically from then on.
+- **You change it:** asked again, with the new answer recommended.
+- **You keep changing it** (twice): marked "depends on the work" and always asked.
+
+At the end of planning you get one screen: "Used your usual choices: 1. … 2. …" plus the plan's "Assumed" lines, with **Accept all** or **Change some**.
+
+**Where they live:**
+- **`docs/oneshot/preferences.md`:** code style, libraries and patterns for this project. Commit it to share it with your team.
+- **`~/.claude/oneshot/preferences.md`:** build and run modes, shared by all your projects.
+
+Both are plain tables you can edit: change an answer, set the state, or delete a row to forget it. `decisions.md` records "From your preference (<flow>)" for each one applied, so the history shows why.
 
 ## Progress you can see
 - **While it runs:** the session's task list has one item per task, updated as each task starts and finishes, plus a line after each task: `▓▓▓▓░░░░░░ 6/16 · T6 done · now T9`.

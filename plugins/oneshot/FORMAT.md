@@ -13,6 +13,9 @@ docs/oneshot/
     tasks.md       how: a status board on top, then the tasks, each with its own test, plus "Done when"
     review.md      review results: plan + tasks, then code
     progress.md    "Now" on top (where things stand), then the log, newest first
+  preferences.md   this project's remembered answers (code style, libraries, patterns)
+
+~/.claude/oneshot/preferences.md   workflow answers shared by all your projects (build mode, run mode)
 ```
 
 **Icons** (used in the board, in task headings, and in the index): ✅ done · 🔄 in progress · 🔍 under review · ⬜ to do · ⏭️ skipped · ❌ blocked.
@@ -35,6 +38,8 @@ Out: …
 - CSV plus a SHA-256 checksum file. Why: compliance needs integrity proof. *(Claude's call)* when the user had no preference
 ## Approach
 1. … (steps, with the files and areas they touch)
+## Assumed
+- Export filename is `audit-log-<date>.csv`. Edit this line to change it.
 ## Risks & open questions
 ## Done when
 - [ ] A user with audit:export can download a CSV and its checksum
@@ -46,7 +51,51 @@ Out: …
 # Decisions: Export audit log as CSV
 ## Q1. Who can export?
 **Answer:** Compliance role only. Why: least privilege.
+## Q2. Where does request validation go?
+**Answer:** Form Request classes. From your preference (user-import).
 ```
+Each answer says where it came from: the user's answer (no note), *(Claude's call)* for "no preference", or `From your preference (<flow>)` for a preference applied and confirmed on the confirm screen, naming the flow where it was last answered (`From your workflow preference` for build and run modes).
+
+## Preferences
+Planning remembers the user's answers to **preference** questions, so it only asks about what's new. There are two files, same format:
+- **`docs/oneshot/preferences.md`:** project preferences, e.g. code style, libraries, patterns, test style. It sits next to the flows and can be committed, so teammates share it.
+- **`~/.claude/oneshot/preferences.md`:** workflow preferences shared by all the user's projects: build mode, run mode. Create the folder and file the first time one is saved. Its **Last flow** is always `-`: flow names can identify a client or project, so they never go in this shared file.
+
+```markdown
+# OneShot preferences
+
+| Topic | Answer | State | Streak | Changes | Used | Last flow |
+|---|---|---|---|---|---|---|
+| Where request validation goes | Form Request classes | ✅ auto | 3 | 0 | 4 | user-import |
+| Test style | Feature tests over unit tests | 💬 ask | 1 | 0 | 1 | export-audit-log |
+| Error response shape | depends on the work | 🔀 always ask | 0 | 2 | 3 | export-audit-log |
+```
+- **Topic:** a short, stable name for the question, so the same question matches next time. Reuse an existing topic's wording rather than adding a near-duplicate.
+- **State:**
+  - `💬 ask`: asked every time, with **Answer** as the recommended option.
+  - `✅ auto`: applied without asking, then shown on the confirm screen.
+  - `🔀 always ask`: answers keep changing, so it depends on the work. Asked every time, with no option marked from the preference.
+- **Streak:** how many times in a row the same answer was given or accepted. **Changes:** how many times the answer changed. **Used:** how many flows used it.
+
+**Kinds of question.** Sort every question before asking it:
+| Kind | Examples | What happens |
+|---|---|---|
+| Work facts | what it does, scope, edge cases, data, who can use it | Always asked. Never stored, never assumed. |
+| Settled preference (`✅ auto`) | "validation in Form Request classes", "feature tests over unit tests" | Not asked. Applied, then listed on the confirm screen. |
+| New or unsettled preference (no row, `💬 ask`, `🔀 always ask`) | anything not answered before, or that changes | Asked. For `💬 ask` the stored answer is the recommended option. |
+
+A question the code already answers (the test framework, the folder layout) is neither: don't ask it, and don't store it.
+
+**Confidence rules** (update the row after the confirm screen):
+- **First answer:** add the row: `💬 ask`, Streak 1, Changes 0, Used 1.
+- **Same answer again:** Streak +1, Used +1. At Streak 2 it becomes `✅ auto`.
+- **Accepted on the confirm screen** (`✅ auto`): Streak +1, Used +1.
+- **Different answer** (asked, or changed on the confirm screen): Answer is replaced, Streak 1, Changes +1, Used +1, back to `💬 ask`. When Changes reaches 2, it becomes `🔀 always ask` with Answer `depends on the work`, and stays that way until the user edits it.
+- **`🔀 always ask` answered again:** only Used +1 and Last flow change. Answer stays `depends on the work`, and Streak and Changes stay as they are.
+- **"No preference"** (*Claude's call*) is not an answer: don't add or update a row for it.
+- Update **Last flow** to this flow whenever the row changes (project file only).
+
+The user can edit the file by hand: change an answer, set a State, or delete a row to forget it. Skills read it fresh every time and respect those edits.
 
 ## tasks.md
 ```markdown

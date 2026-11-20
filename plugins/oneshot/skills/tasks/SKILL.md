@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: Turn a OneShot plan into tasks - each one finishable and testable on its own, with its own test command - or import existing tasks into that format. Uses read-only subagents to study the code for bigger work, asks about anything that changes what gets built, and asks the build and run modes. Writes docs/oneshot/<name>/tasks.md. Usually run by /oneshot:start; can be used alone. Use for "/oneshot:tasks", "break this plan into tasks", "import these tasks".
+description: Turn a OneShot plan into tasks - each one finishable and testable on its own, with its own test command - or import existing tasks into that format. Uses read-only subagents to study the code for bigger work, asks about anything that changes what gets built, and asks the build and run modes (or applies your usual ones). Writes docs/oneshot/<name>/tasks.md. Usually run by /oneshot:start; can be used alone. Use for "/oneshot:tasks", "break this plan into tasks", "import these tasks".
 argument-hint: "<flow name> [path to existing tasks]"
 ---
 
@@ -38,10 +38,13 @@ This step works out **how** the plan gets built. It needs `docs/oneshot/<name>/p
 
 ## 3. Merge and ask
 - **Shared files:** tasks that touch the same files run in sequence, so add `after:`. Mark `parallel: yes` only for tasks with no dependencies and no shared files.
-- **New decisions:** anything that changes **what** gets built (a migration, a new library, an API shape) is asked grill-style, one question at a time. Log each in `decisions.md` and update `plan.md`. Never decide these silently.
+- **New decisions:** anything that changes **what** gets built (a migration, a new library, an API shape) is asked the way `oneshot:plan` asks: sorted by kind, preferences applied or recommended from `docs/oneshot/preferences.md`, up to 4 related questions per screen (FORMAT.md, "Preferences"). Log each in `decisions.md`, update `plan.md`, and update the preferences. Never decide these silently.
 - **Unsure about order:** ask, e.g. "T3 and T4 both touch routes.ts: sequence (Recommended) or parallel?"
-- **Build mode:** **One task at a time** (Recommended, cheapest) or **Independent tasks in parallel** (subagents; uses more tokens).
-- **Run mode:** **Task by task** (Recommended: pause after each so you can check or stop) or **All in one go** (stops only on a failure or an open decision).
+- **Build and run modes** are workflow preferences, in `~/.claude/oneshot/preferences.md` (topics `Build mode` and `Run mode`):
+  - **`✅ auto`:** apply it without asking. The approval screen in `/oneshot:start` shows it, and a change there updates the preference. When this skill runs on its own, say in one line which modes were applied from your preferences, e.g. `Build: one task at a time · Run: all in one go (your usual)`.
+  - **Otherwise** ask both in one screen, with a `💬 ask` answer as the recommended option, then update the file by the confidence rules (FORMAT.md, "Preferences").
+  - **Build mode:** **One task at a time** (cheapest; the recommendation when there's no preference) or **Independent tasks in parallel** (subagents; uses more tokens).
+  - **Run mode:** **Task by task** (pause after each so you can check or stop; the recommendation when there's no preference) or **All in one go** (stops only on a failure or an open decision).
 
 ## 4. Save
 Write `tasks.md` with `status: draft`, the modes and `test-command`, then the board (every task ⬜, test `not run`), every task (`status: todo`, a ⬜ heading, `test runs: -`), and "Done when" copied from the plan. Then update the views (FORMAT.md, "Keeping the views current"), e.g. log `🧭 6 tasks written`.
