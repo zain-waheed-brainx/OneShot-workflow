@@ -29,7 +29,9 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
 
 ## code: after the build
 1. **Ticket review first**, by you, without a review skill. Read the whole change (`git diff` plus new files, limited to the task files) and check it against the plan:
-   - Goal, Scope (in and out) and Decisions;
+   - Goal, Scope (in and out), Decisions and **Code approach**;
+   - across all tasks together: duplicated logic and queries inside loops, which often appear between tasks;
+   - the project's rules (`CLAUDE.md`, `CLAUDE.local.md`) and the `✅ auto` preferences in `docs/oneshot/preferences.md`, unless the plan says otherwise;
    - anything missing, half done or built beyond scope, including gaps between tasks;
    - each "Done when" item: tick it in `tasks.md` (and `plan.md`) if you actually verified it by running a test or command, and list the ones you couldn't verify.
 
@@ -42,7 +44,7 @@ If no mode is given: use `plan` when `tasks.md` is `draft`, or `code` when every
    3. a careful read of the diff.
 
    If a skill asks whether to review staged or all changes, choose staged only.
-5. **Record and fix.** Write every finding to `review.md` under `## Code review · <date>`, naming the reviewer, in the same one-bullet form as step 3 of the plan review (`- [open] #N Severity: file:line: problem. Fix: ...`, never numbered). Fix every finding, or skip or accept it with a reason the user agrees to. Re-stage after fixes, and re-run the affected task tests and the full test command.
+5. **Record and fix.** Write every finding to `review.md` under `## Code review · <date>`, naming the reviewer, in the same one-bullet form as step 3 of the plan review (`- [open] #N Severity: file:line: problem. Fix: ...`, never numbered). Fixes follow the plan, the project's rules and the `✅ auto` preferences. Fix every finding, or skip or accept it with a reason the user agrees to. Re-stage after fixes, and re-run the affected task tests and the full test command.
 6. If every finding is closed, set `status: done` in `tasks.md`. Then update the views (FORMAT.md, "Keeping the views current"): Stage becomes ✅ Ready to commit.
 7. **Re-stage the flow's files** (`git add -- docs/oneshot/<name>/`), because `review.md`, `progress.md` and `tasks.md` changed after step 2. Then check `git diff --cached --stat`, so the hand-over shows what's really staged.
 

@@ -21,9 +21,10 @@ Work in `docs/oneshot/<name>/`. If no name is given, run `oneshot:start` instead
 Interview the user until you both understand the work the same way, asking only what you need. Start with the decisions others depend on.
 
 ### Before the first question
-1. **Read the code first.** Read the relevant code and docs (README, CLAUDE.md, the files the work touches). Never ask what the repo already answers, like the test framework or the folder layout.
-2. **Read the preferences:** `docs/oneshot/preferences.md` and `~/.claude/oneshot/preferences.md` (FORMAT.md, "Preferences"). Either may be missing.
-3. **Size the work and set a budget** of questions: small (a few files, one area) about 3, medium about 6, large as needed but still grouped. Questions about the work itself are never dropped to meet the budget; small points become "Assumed" lines instead (below).
+1. **Read the project's rules:** `CLAUDE.md`, `CLAUDE.local.md` and `.claude/CLAUDE.md`, plus any standards files they point to. Rules they settle (where validation goes, how queries are written, comments, locking) are decided: apply them, never ask about them.
+2. **Read the code and find what already exists** before planning anything new: helpers, traits, base classes, models and their scopes, services, shared components, and constants for shared lists. The plan extends these instead of adding a parallel version. Never ask what the repo already answers, like the test framework or the folder layout.
+3. **Read the preferences:** `docs/oneshot/preferences.md` and `~/.claude/oneshot/preferences.md` (FORMAT.md, "Preferences"). Either may be missing.
+4. **Size the work and set a budget** of questions: small (a few files, one area) about 3, medium about 6, large as needed but still grouped. Questions about the work itself are never dropped to meet the budget; small points become "Assumed" lines instead (below).
 
 ### Sort every question (FORMAT.md, "Kinds of question")
 - **Work facts** (what it does, scope, edge cases, data): always asked. Never assumed, never stored.
@@ -56,6 +57,7 @@ Keep it short. A builder should be able to work from it a month from now with no
 - Scope (in / out)
 - Decisions, each with a one-line why
 - Approach: the steps, with the files and areas they touch
+- Code approach: reuse, queries, writes and locking, where validation and auth live (FORMAT.md). Filled from the code and the project's rules, not from questions
 - Assumed: small points decided without asking, one line each
 - Risks & open questions
 - Done when: checkable items

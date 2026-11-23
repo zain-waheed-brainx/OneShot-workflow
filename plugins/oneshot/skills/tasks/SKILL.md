@@ -28,6 +28,8 @@ This step works out **how** the plan gets built. It needs `docs/oneshot/<name>/p
   - the files it will change or add, including its test file;
   - the steps, following the patterns already in the code;
   - **its test:** the test file, the exact command that runs only that test with the project's own test runner, and one line on what it proves;
+  - **reuse:** the existing helpers, models or components it extends (paths), so nothing is written twice;
+  - **queries:** what it reads and writes, which relations are eager-loaded, and that nothing queries inside a loop;
   - what it depends on;
   - any decision the plan doesn't cover.
 
@@ -37,6 +39,8 @@ This step works out **how** the plan gets built. It needs `docs/oneshot/<name>/p
 - Find the project's full test command (package.json scripts, Makefile, composer.json, the README) and put it in `test-command:`. If there's none, leave it empty.
 
 ## 3. Merge and ask
+- **Shared logic:** if two tasks need the same logic (a lookup, a query, a calculation, a list of keys), make it one task that adds it in one place, and have the others come after it and call it. Never plan the same code in two tasks.
+- **Each task's `How`** ends with `Reuse:` and `Queries:` lines (FORMAT.md), following the plan's **Code approach**. Leave out a line that doesn't apply.
 - **Shared files:** tasks that touch the same files run in sequence, so add `after:`. Mark `parallel: yes` only for tasks with no dependencies and no shared files.
 - **New decisions:** anything that changes **what** gets built (a migration, a new library, an API shape) is asked the way `oneshot:plan` asks: sorted by kind, preferences applied or recommended from `docs/oneshot/preferences.md`, up to 4 related questions per screen (FORMAT.md, "Preferences"). Log each in `decisions.md`, update `plan.md`, and update the preferences. Never decide these silently.
 - **Unsure about order:** ask, e.g. "T3 and T4 both touch routes.ts: sequence (Recommended) or parallel?"

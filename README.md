@@ -47,6 +47,7 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 /oneshot:start Add CSV export of the audit log for compliance users
 /oneshot:start docs/specs/audit-export.md        ← an existing plan: validate it, or use it as is
 /oneshot:start @tasks.md                         ← existing tasks: imported, then each gets a test
+/oneshot:start https://acme.atlassian.net/browse/ABC-123   ← a Jira issue, read with its comments
 /oneshot:start                                   ← pick an existing flow to continue
 /oneshot:start export-audit-log                  ← continue that flow
 ```
@@ -58,6 +59,7 @@ No setup is needed. It only requires git (and the project's own test runner, if 
 1. **Plan.** Claude reads the code, then asks only what it needs, up to 4 related questions per screen, with concrete options and its recommendation first.
    - Questions about the work itself are always asked. Your usual preferences are applied and shown on one confirm screen at the end (see [Preferences](#preferences)).
    - Small points that don't change the plan go in the plan as "Assumed" lines you can edit, instead of being asked.
+   - **Code quality is planned, not just reviewed.** Claude reads your rules (`CLAUDE.md`, `CLAUDE.local.md`) and finds code that already exists. The plan's **Code approach** says what gets reused, how queries run (no query in a loop, eager loading), and where validation and locking live. Each task names what it reuses and queries, and logic two tasks need becomes one task.
    - Each answer goes in `decisions.md`, and `plan.md` fills in as you go.
    - If you answer "No preference", Claude takes the recommended option and marks it *(Claude's call)*.
    - An existing plan can be **validated**: Claude lists its gaps, then grills you only on those.
@@ -114,6 +116,9 @@ docs/oneshot/
 
 **Skimming:** open `docs/oneshot/README.md` for every flow at once. In a flow, the top of `tasks.md` shows what's done and what's not, and the top of `progress.md` shows where it stands right now. Task headings carry the same icons, so the outline in your editor or on GitHub shows status at a glance.
 
+## Jira
+Give `/oneshot:start` a Jira link and Claude reads the issue and all its comments through its Atlassian connector (no tokens or passwords), with later comments winning where they change scope. Only Claude's summary goes in the flow's files, never the raw issue text. The issue number goes in the folder name and the suggested commit subject, and continuing the flow offers to check for new comments.
+
 ## Preferences
 Planning remembers your answers, so after the first few flows most questions are about the work itself.
 
@@ -134,7 +139,7 @@ At the end of planning you get one screen: "Used your usual choices: 1. … 2. �
 - **`docs/oneshot/preferences.md`:** code style, libraries and patterns for this project. Commit it to share it with your team.
 - **`~/.claude/oneshot/preferences.md`:** build and run modes, shared by all your projects.
 
-Both are plain tables you can edit: change an answer, set the state, or delete a row to forget it. `decisions.md` records "From your preference (<flow>)" for each one applied, so the history shows why.
+Build and the reviews follow your settled preferences and your `CLAUDE.md` rules too; the plan wins where they differ. Both are plain tables you can edit: change an answer, set the state, or delete a row to forget it. `decisions.md` records "From your preference (<flow>)" for each one applied, so the history shows why.
 
 ## Progress you can see
 - **While it runs:** the session's task list has one item per task, updated as each task starts and finishes, plus a line after each task: `▓▓▓▓░░░░░░ 6/16 · T6 done · now T9`.

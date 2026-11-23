@@ -25,7 +25,9 @@ docs/oneshot/
 ---
 title: Export audit log as CSV
 status: drafting        # drafting | validated | approved
-source: grill           # grill | imported | details
+source: grill           # grill | imported | details | jira
+ref: -                  # tracker number, e.g. ABC-123, when the work has one
+jira: -                 # link to the Jira issue it came from, if any
 created: 2026-11-13
 updated: 2026-11-13
 ---
@@ -38,6 +40,11 @@ Out: …
 - CSV plus a SHA-256 checksum file. Why: compliance needs integrity proof. *(Claude's call)* when the user had no preference
 ## Approach
 1. … (steps, with the files and areas they touch)
+## Code approach
+- Reuse: extends src/audit/AuditLog.ts (scopeForUser); the date-range filter becomes one shared method
+- Queries: one query per export, user eager-loaded; none in loops; only the columns exported
+- Writes: the checksum file is written after the CSV, and both are removed on failure
+- Validation and auth: in the request class, following CLAUDE.md
 ## Assumed
 - Export filename is `audit-log-<date>.csv`. Edit this line to change it.
 ## Risks & open questions
@@ -45,6 +52,10 @@ Out: …
 - [ ] A user with audit:export can download a CSV and its checksum
 ```
 `approved` is set only when the user approves the plan and its tasks together, after the plan + tasks review.
+
+**Code approach** is filled from the code and the project's rules, not from questions. Leave out lines that don't apply: reuse (what existing code it extends, and logic that becomes one shared method), queries (eager loading for loops, batched writes, no query inside a loop, nothing loaded twice, only the columns needed), writes and concurrency (transactions, locks, cleanup on failure), where validation, authorization and errors live, and limits for new tables holding user data.
+
+`-` means none, for both **ref** and **jira**. A real **ref** goes in the suggested commit subject at hand-over, e.g. `ABC-123: Export audit log as CSV`.
 
 ## decisions.md
 ```markdown
@@ -128,7 +139,8 @@ updated: 2026-11-13
 - test runs: -          # filled in by build, e.g. before: failed 14:02 · after: passed 14:09
 ### How
 1. …
-Notes: follows the pattern in src/auth/roles.ts
+Reuse: extends src/auth/roles.ts (hasPermission)
+Queries: one query, roles eager-loaded; none in loops
 
 ## Done when
 - [ ] A user with audit:export can download a CSV and its checksum

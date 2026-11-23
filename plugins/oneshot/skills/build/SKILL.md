@@ -10,7 +10,7 @@ Read `<this skill's base directory>/../../FORMAT.md` first. Work in the current 
 
 ## 1. Get ready
 1. **Check it's approved.** `plan.md` and `tasks.md` must be `approved` (or `tasks.md` `building`, when continuing). If not, say what's missing. Approval happens in `/oneshot:start` after the review.
-2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md` and **Now** in `progress.md`. Set `status: building` in `tasks.md`. If the files are in the older format, convert them first (FORMAT.md, "Older files").
+2. **Load the context:** `plan.md`, `decisions.md`, `tasks.md`, **Now** in `progress.md`, the project's rules (`CLAUDE.md`, `CLAUDE.local.md`, `.claude/CLAUDE.md`) and `docs/oneshot/preferences.md`. Follow the rules and the `✅ auto` preferences in all code; the plan wins where they differ. Set `status: building` in `tasks.md`. If the files are in the older format, convert them first (FORMAT.md, "Older files").
 3. **Check the test commands.** Each one runs on this machine as written. Before running a task's test the first time, make sure it only runs the project's test runner on that task's tests. If it does anything else, such as chaining commands, making network calls or deleting files, stop and ask.
 4. **Check git:** run `git status`. Note any changes that existed before this build. They aren't this flow's work, and they never get staged.
 5. **Set up the task list** from `tasks.md`, following "Progress you can see" below. Tasks already done show as done or folded, so a continued build starts where it left off.
@@ -50,6 +50,9 @@ Repeat until every task is `done` or `skipped`.
    - **Spec:** does it do everything the task's `How` says, following the plan's decisions?
    - **Scope:** does it do nothing outside the plan? A file outside the task's `files` is fine only if it clearly belongs to the task: add it to `files` and say so.
    - **Test:** does the test prove the spec?
+   - **Reuse:** does it extend the existing code the task names instead of adding a parallel version? Is any logic now in two places (in this diff, or this diff and existing code)? Extract it into one method.
+   - **Queries:** no query inside a loop (including helpers or accessors that query on each call), relations used in loops eager-loaded, writes batched, nothing loaded twice, only the columns needed.
+   - **Project rules and preferences:** does it follow `CLAUDE.md` / `CLAUDE.local.md` and the user's preferences in `docs/oneshot/preferences.md`? The plan wins where they differ; `💬 ask` and `🔀 always ask` entries are hints only.
 5. **Self code review:** bugs, edge cases, error handling, and leftover debug code. Run lint if the project has it. Fix what you find and re-run the task's test.
 6. **Mark it `done` (✅)** (a task only leaves `review` once both reviews are clean; a review fix means setting it back to `doing`, fixing it, re-running its test, and returning to step 4) and update the views (FORMAT.md, "Keeping the views current"). The log line is `✅ T# done: what changed (test result)`, plus a ⚠️ line for any gotcha. Tick it in the task list, make the next task in progress, and write the progress line in chat.
 7. **Pause or carry on.** Use `all` or `step` from the arguments if given, otherwise the `run:` mode.
